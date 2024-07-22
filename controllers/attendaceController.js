@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const markAttendance = async (req, res) => {
   const { location } = req.body;
-  const { file } = req; // Multer will populate this with the uploaded file
+  const { file } = req;
 
   if (!file) {
     return res.status(400).json({ error: "Image is required" });
@@ -17,12 +17,12 @@ const markAttendance = async (req, res) => {
 
   const imagePath = path.join(__dirname, "../uploads", `${uuidv4()}-${file.originalname}`);
 
-  // Move the file from the temporary path to the desired location
   fs.renameSync(file.path, imagePath);
 
   const attendance = new Attendance({
-    image: imagePath, // Save path to the image in the database
+    image: imagePath,
     location: JSON.parse(location),
+    date: new Date().toISOString().split('T')[0], // Save only the date part
     user: req.user._id,
   });
 
@@ -35,4 +35,31 @@ const markAttendance = async (req, res) => {
   }
 };
 
-module.exports = { markAttendance };
+const getAttendanceByDate = async (req, res) => {
+  const { date } = req.query;
+  const userId = req.user._id;
+
+  const startDate = new Date(date);
+  startDate.setUTCHours(0, 0, 0, 0); // Start of the day in UTC
+
+  const endDate = new Date(startDate);
+  endDate.setUTCDate(endDate.getUTCDate() + 1); // End of the day in UTC
+
+  try {
+    const attendances = await Attendance.find({
+      user: userId,
+      timestamp: {
+        $gte: startDate,
+        $lt: endDate,
+      },
+    });
+
+    res.status(200).json(attendances);
+  } catch (error) {
+    console.error("Error fetching attendance:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+module.exports = { markAttendance, getAttendanceByDate };

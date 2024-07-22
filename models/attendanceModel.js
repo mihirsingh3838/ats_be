@@ -1,28 +1,31 @@
 const mongoose = require('mongoose');
-const User = require('./userModel');
 
 const attendanceSchema = new mongoose.Schema({
   image: {
     type: String,
-    required: true, // Ensure an image is always provided
+    required: true,
   },
   location: {
     lat: {
       type: Number,
-      required: true, // Ensure latitude is always provided
+      required: true,
     },
     lng: {
       type: Number,
-      required: true, // Ensure longitude is always provided
+      required: true,
     },
   },
   timestamp: {
     type: Date,
     default: Date.now,
   },
+  date: {
+    type: String,
+    required: true,
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Use the model name as a string
+    ref: 'User',
     required: true,
   },
 });

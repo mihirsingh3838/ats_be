@@ -1,16 +1,14 @@
-const express = require('express')
-const requireAuth = require('../middleware/requireAuth')
-const { markAttendance } = require('../controllers/attendaceController')
+const express = require('express');
+const requireAuth = require('../middleware/requireAuth');
+const { markAttendance, getAttendanceByDate } = require('../controllers/attendaceController');
 const multer = require('multer');
 
-const router = express.Router()
-
+const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
-// require auth for all workout routes
-router.use(requireAuth)
+router.use(requireAuth);
 
-// POST a new workout
-router.post('/', upload.single('image') ,markAttendance)
+router.post('/', upload.single('image'), markAttendance);
+router.get('/', getAttendanceByDate);
 
-module.exports = router
+module.exports = router;
