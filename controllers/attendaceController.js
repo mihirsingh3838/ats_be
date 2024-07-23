@@ -19,10 +19,13 @@ const markAttendance = async (req, res) => {
 
   fs.renameSync(file.path, imagePath);
 
+  const timestamp = new Date(); 
+
   const attendance = new Attendance({
     image: imagePath,
     location: JSON.parse(location),
     date: new Date().toISOString().split('T')[0], // Save only the date part
+    timestamp,
     user: req.user._id,
   });
 
@@ -61,5 +64,18 @@ const getAttendanceByDate = async (req, res) => {
   }
 };
 
+const getAllAttendance = async (req, res) => {
+  const userId = req.user._id;
 
-module.exports = { markAttendance, getAttendanceByDate };
+  try {
+    const attendances = await Attendance.find({ user: userId }).sort({ timestamp: 1 });
+
+    res.status(200).json(attendances);
+  } catch (error) {
+    console.error("Error fetching all attendance:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+module.exports = { markAttendance, getAttendanceByDate, getAllAttendance };
