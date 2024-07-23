@@ -46,7 +46,7 @@ userSchema.statics.signup = async function(email, password) {
 
   const role = email === 'admin@bluetown.com' ? 'admin' : 'user';
 
-  const user = await this.create({ email, password: hash })
+  const user = await this.create({ email, password: hash, role })
 
   return user
 }
