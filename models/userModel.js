@@ -18,38 +18,55 @@ const userSchema = new Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
+  },
+  fullName: {
+    type: String,
+    required: true
+  },
+  phoneNumber: {
+    type: String,
+    required: true
+  },
+  reportingManager: {
+    type: String,
+    required: true
+  },
+  state: {
+    type: String,
+    required: true
   }
 });
 
-// static signup method
-userSchema.statics.signup = async function(email, password) {
 
+// static signup method
+userSchema.statics.signup = async function(email, password, fullName, phoneNumber, reportingManager, state) {
   // validation
-  if (!email || !password) {
-    throw Error('All fields must be filled')
+  if (!email || !password || !fullName || !phoneNumber || !reportingManager || !state) {
+    throw Error('All fields must be filled');
   }
   if (!validator.isEmail(email)) {
-    throw Error('Email not valid')
+    throw Error('Email not valid');
   }
   if (!validator.isStrongPassword(password)) {
-    throw Error('Password not strong enough')
+    throw Error('Password not strong enough');
   }
 
-  const exists = await this.findOne({ email })
+  const exists = await this.findOne({ email });
 
   if (exists) {
-    throw Error('Email already in use')
+    throw Error('Email already in use');
   }
 
-  const salt = await bcrypt.genSalt(10)
-  const hash = await bcrypt.hash(password, salt)
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
 
   const role = email === 'admin@bluetown.com' ? 'admin' : 'user';
 
-  const user = await this.create({ email, password: hash, role })
+  const user = await this.create({ email, password: hash, role, fullName, phoneNumber, reportingManager, state });
 
-  return user
+  return user;
 }
+
 
 // static login method
 userSchema.statics.login = async function(email, password) {
