@@ -11,7 +11,7 @@ const cors= require('cors');
 const app = express()
 
 app.use(cors({
-  origin: 'https://your-frontend-url.onrender.com',
+  origin: 'https://ats-fe-1om7.onrender.com',
   credentials: true
 }));
 
