@@ -2,6 +2,7 @@ const Attendance = require('../models/attendanceModel');
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require('uuid');
+const User = require('../models/userModel');
 
 const markAttendance = async (req, res) => {
   const { location } = req.body;
@@ -77,5 +78,28 @@ const getAllAttendance = async (req, res) => {
   }
 };
 
+const getFilteredAttendance = async (req, res) => {
+  const { state, date } = req.query;
 
-module.exports = { markAttendance, getAttendanceByDate, getAllAttendance };
+  try {
+    const usersInState = await User.find({ state }).distinct('_id');
+    const startDate = new Date(date);
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setUTCDate(endDate.getUTCDate() + 1);
+
+    const attendances = await Attendance.find({
+      user: { $in: usersInState },
+      timestamp: { $gte: startDate, $lt: endDate },
+    }).populate('user', 'email');
+
+    res.status(200).json(attendances);
+  } catch (error) {
+    console.error("Error fetching filtered attendance:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+module.exports = { markAttendance, getAttendanceByDate, getAllAttendance, getFilteredAttendance };

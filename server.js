@@ -5,9 +5,15 @@ const mongoose = require('mongoose')
 const attendanceRoutes = require('./routes/attendance')
 const userRoutes = require('./routes/user')
 const bodyParser = require("body-parser");
+const cors= require('cors');
 
 // express app
 const app = express()
+
+app.use(cors({
+  origin: 'https://your-frontend-url.onrender.com',
+  credentials: true
+}));
 
 // middleware
 app.use(express.json())

@@ -1,8 +1,8 @@
-const mongoose = require('mongoose')
-const bcrypt = require('bcrypt')
-const validator = require('validator')
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const validator = require('validator');
 
-const Schema = mongoose.Schema
+const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
   email: {
@@ -34,9 +34,10 @@ const userSchema = new Schema({
   state: {
     type: String,
     required: true
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
 });
-
 
 // static signup method
 userSchema.statics.signup = async function(email, password, fullName, phoneNumber, reportingManager, state) {
@@ -67,25 +68,23 @@ userSchema.statics.signup = async function(email, password, fullName, phoneNumbe
   return user;
 }
 
-
 // static login method
 userSchema.statics.login = async function(email, password) {
-
   if (!email || !password) {
-    throw Error('All fields must be filled')
+    throw Error('All fields must be filled');
   }
 
-  const user = await this.findOne({ email })
+  const user = await this.findOne({ email });
   if (!user) {
-    throw Error('Incorrect email')
+    throw Error('Incorrect email');
   }
 
-  const match = await bcrypt.compare(password, user.password)
+  const match = await bcrypt.compare(password, user.password);
   if (!match) {
-    throw Error('Incorrect password')
+    throw Error('Incorrect password');
   }
 
-  return user
+  return user;
 }
 
-module.exports = mongoose.model('User', userSchema)
+module.exports = mongoose.model('User', userSchema);
