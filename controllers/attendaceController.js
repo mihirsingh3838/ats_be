@@ -92,7 +92,7 @@ const getFilteredAttendance = async (req, res) => {
     const attendances = await Attendance.find({
       user: { $in: usersInState },
       timestamp: { $gte: startDate, $lt: endDate },
-    }).populate('user', 'email');
+    }).populate('user', 'email fullName phoneNumber reportingManager');
 
     res.status(200).json(attendances);
   } catch (error) {
@@ -101,5 +101,27 @@ const getFilteredAttendance = async (req, res) => {
   }
 };
 
+const getEmailAttendance = async (req, res)=> {
+  const { email } = req.query;
 
-module.exports = { markAttendance, getAttendanceByDate, getAllAttendance, getFilteredAttendance };
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const attendanceData = await Attendance.find({ user: user._id })
+      .populate('user', 'email fullName phoneNumber reportingManager'); // Populate user fields
+
+    res.status(200).json(attendanceData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
+module.exports = { markAttendance, getAttendanceByDate, getAllAttendance, getFilteredAttendance, getEmailAttendance };
