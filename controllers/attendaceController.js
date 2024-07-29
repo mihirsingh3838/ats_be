@@ -3,12 +3,19 @@ const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/userModel');
+const cloudinary = require('cloudinary').v2;
+const { Buffer } = require('buffer');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const markAttendance = async (req, res) => {
-  const { location } = req.body;
-  const { file } = req;
+  const { location, image } = req.body; // 'image' contains the base64 string
 
-  if (!file) {
+  if (!image) {
     return res.status(400).json({ error: "Image is required" });
   }
 
@@ -16,27 +23,40 @@ const markAttendance = async (req, res) => {
     return res.status(400).json({ error: "Location is required" });
   }
 
-  const imagePath = path.join(__dirname, "../uploads", `${uuidv4()}-${file.originalname}`);
-
-  fs.renameSync(file.path, imagePath);
-
-  const timestamp = new Date(); 
-
-  const attendance = new Attendance({
-    image: imagePath,
-    location: JSON.parse(location),
-    date: new Date().toISOString().split('T')[0], // Save only the date part
-    timestamp,
-    user: req.user._id,
-  });
-
-  try {
-    await attendance.save();
-    res.status(201).json({ message: "Attendance saved successfully" });
-  } catch (error) {
-    console.error("Error saving attendance:", error);
-    res.status(500).json({ error: "Server error" });
+  // Convert base64 string to buffer
+  const matches = image.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    return res.status(400).json({ error: "Invalid image format" });
   }
+  const type = matches[1];
+  const buffer = Buffer.from(matches[2], 'base64');
+
+  // Upload image to Cloudinary
+  cloudinary.uploader.upload_stream({ resource_type: 'image' }, async (error, result) => {
+    if (error) {
+      console.error("Cloudinary upload error:", error);
+      return res.status(500).json({ error: "Cloudinary upload failed" });
+    }
+
+    try {
+      const imageUrl = result.secure_url;
+      const timestamp = new Date();
+
+      const attendance = new Attendance({
+        image: imageUrl,
+        location: JSON.parse(location),
+        date: new Date().toISOString().split('T')[0], // Save only the date part
+        timestamp,
+        user: req.user._id,
+      });
+
+      await attendance.save();
+      res.status(201).json({ message: "Attendance saved successfully" });
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      res.status(500).json({ error: "Server error" });
+    }
+  }).end(buffer);
 };
 
 const getAttendanceByDate = async (req, res) => {
