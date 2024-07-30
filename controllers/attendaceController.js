@@ -5,12 +5,33 @@ const { v4: uuidv4 } = require('uuid');
 const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
 const { Buffer } = require('buffer');
+const sharp = require('sharp');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+const compressImageToTargetSize = async (buffer, maxSizeInKB) => {
+  let quality = 100;
+  let resizedBuffer = buffer;
+
+  while (quality > 10) {
+    const compressedBuffer = await sharp(buffer)
+      .jpeg({ quality })
+      .toBuffer();
+
+    if (compressedBuffer.length / 1024 <= maxSizeInKB) {
+      resizedBuffer = compressedBuffer;
+      break;
+    }
+
+    quality -= 10;
+  }
+
+  return resizedBuffer;
+};
 
 const markAttendance = async (req, res) => {
   const { location, image } = req.body; // 'image' contains the base64 string
@@ -31,32 +52,41 @@ const markAttendance = async (req, res) => {
   const type = matches[1];
   const buffer = Buffer.from(matches[2], 'base64');
 
-  // Upload image to Cloudinary
-  cloudinary.uploader.upload_stream({ resource_type: 'image' }, async (error, result) => {
-    if (error) {
-      console.error("Cloudinary upload error:", error);
-      return res.status(500).json({ error: "Cloudinary upload failed" });
-    }
+  // Resize and reduce the quality of the image using sharp
+  try {
+    const maxSizeInKB = 10; // Max size in KB
+    const resizedBuffer = await compressImageToTargetSize(buffer, maxSizeInKB);
 
-    try {
-      const imageUrl = result.secure_url;
-      const timestamp = new Date();
+    // Upload resized image to Cloudinary
+    cloudinary.uploader.upload_stream({ resource_type: 'image' }, async (error, result) => {
+      if (error) {
+        console.error("Cloudinary upload error:", error);
+        return res.status(500).json({ error: "Cloudinary upload failed" });
+      }
 
-      const attendance = new Attendance({
-        image: imageUrl,
-        location: JSON.parse(location),
-        date: new Date().toISOString().split('T')[0], // Save only the date part
-        timestamp,
-        user: req.user._id,
-      });
+      try {
+        const imageUrl = result.secure_url;
+        const timestamp = new Date();
 
-      await attendance.save();
-      res.status(201).json({ message: "Attendance saved successfully" });
-    } catch (error) {
-      console.error("Error saving attendance:", error);
-      res.status(500).json({ error: "Server error" });
-    }
-  }).end(buffer);
+        const attendance = new Attendance({
+          image: imageUrl,
+          location: JSON.parse(location),
+          date: new Date().toISOString().split('T')[0], // Save only the date part
+          timestamp,
+          user: req.user._id,
+        });
+
+        await attendance.save();
+        res.status(201).json({ message: "Attendance saved successfully" });
+      } catch (error) {
+        console.error("Error saving attendance:", error);
+        res.status(500).json({ error: "Server error" });
+      }
+    }).end(resizedBuffer);
+  } catch (error) {
+    console.error("Error processing image:", error);
+    res.status(500).json({ error: "Error processing image" });
+  }
 };
 
 const getAttendanceByDate = async (req, res) => {
@@ -121,7 +151,7 @@ const getFilteredAttendance = async (req, res) => {
   }
 };
 
-const getEmailAttendance = async (req, res)=> {
+const getEmailAttendance = async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
@@ -141,7 +171,6 @@ const getEmailAttendance = async (req, res)=> {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
-
+};
 
 module.exports = { markAttendance, getAttendanceByDate, getAllAttendance, getFilteredAttendance, getEmailAttendance };
