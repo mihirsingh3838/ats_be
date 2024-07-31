@@ -129,19 +129,21 @@ const getAllAttendance = async (req, res) => {
 };
 
 const getFilteredAttendance = async (req, res) => {
-  const { state, date } = req.query;
+  const { state, startDate, endDate } = req.query;
 
   try {
     const usersInState = await User.find({ state }).distinct('_id');
-    const startDate = new Date(date);
-    startDate.setUTCHours(0, 0, 0, 0);
+    
+    // Parse the start and end dates
+    const start = new Date(startDate);
+    start.setUTCHours(0, 0, 0, 0);
 
-    const endDate = new Date(startDate);
-    endDate.setUTCDate(endDate.getUTCDate() + 1);
+    const end = endDate ? new Date(endDate) : new Date(start);
+    end.setUTCHours(23, 59, 59, 999);
 
     const attendances = await Attendance.find({
       user: { $in: usersInState },
-      timestamp: { $gte: startDate, $lt: endDate },
+      timestamp: { $gte: start, $lt: end },
     }).populate('user', 'email fullName phoneNumber reportingManager');
 
     res.status(200).json(attendances);
