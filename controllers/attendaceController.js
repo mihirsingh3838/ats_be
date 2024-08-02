@@ -1,6 +1,6 @@
 const Attendance = require('../models/attendanceModel');
-const path = require("path");
-const fs = require("fs");
+// const path = require("path");
+// const fs = require("fs");
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
@@ -12,6 +12,8 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+const GMAP_API_KEY = process.env.GMAP_API_KEY;
 
 const compressImageToTargetSize = async (buffer, maxSizeInKB) => {
   let quality = 100;
@@ -31,6 +33,27 @@ const compressImageToTargetSize = async (buffer, maxSizeInKB) => {
   }
 
   return resizedBuffer;
+};
+
+
+const getLocationName = async (lat, lng) => {
+  try {
+    const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GMAP_API_KEY}`);
+    const data = await response.json();
+
+    if (data.status !== 'OK') {
+      throw new Error(`Geocoding API error: ${data.status}`);
+    }
+
+    if (data.results.length > 0) {
+      return data.results[0].formatted_address;
+    } else {
+      throw new Error("No results found");
+    }
+  } catch (error) {
+    console.error("Error fetching location name:", error);
+    return "Unknown location";
+  }
 };
 
 const markAttendance = async (req, res) => {
@@ -67,10 +90,13 @@ const markAttendance = async (req, res) => {
       try {
         const imageUrl = result.secure_url;
         const timestamp = new Date();
+        const parsedLocation = JSON.parse(location);
+        const locationName = await getLocationName(parsedLocation.lat, parsedLocation.lng);
 
         const attendance = new Attendance({
           image: imageUrl,
-          location: JSON.parse(location),
+          location: parsedLocation,
+          locationName,
           date: new Date().toISOString().split('T')[0], // Save only the date part
           timestamp,
           user: req.user._id,
