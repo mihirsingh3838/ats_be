@@ -6,6 +6,7 @@ const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
 const { Buffer } = require('buffer');
 const sharp = require('sharp');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -91,7 +92,10 @@ const markAttendance = async (req, res) => {
         const imageUrl = result.secure_url;
         const timestamp = new Date();
         const parsedLocation = JSON.parse(location);
+        console.log(`Parsed location: ${parsedLocation.lat}, ${parsedLocation.lng}`); // Log the parsed location
+
         const locationName = await getLocationName(parsedLocation.lat, parsedLocation.lng);
+        console.log(`Location name: ${locationName}`); // Log the location name
 
         const attendance = new Attendance({
           image: imageUrl,
