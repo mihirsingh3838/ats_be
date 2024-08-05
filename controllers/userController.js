@@ -68,6 +68,15 @@ const requestPasswordReset = async (req, res) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 // reset password
 const resetPassword = async (req, res) => {
   const { token } = req.params;
@@ -97,4 +106,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, signupUser, requestPasswordReset, resetPassword };
+module.exports = { loginUser, signupUser, requestPasswordReset, resetPassword, getAllUsers };

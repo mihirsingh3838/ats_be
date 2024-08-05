@@ -92,10 +92,9 @@ const markAttendance = async (req, res) => {
         const imageUrl = result.secure_url;
         const timestamp = new Date();
         const parsedLocation = JSON.parse(location);
-        console.log(`Parsed location: ${parsedLocation.lat}, ${parsedLocation.lng}`); // Log the parsed location
-
+        // console.log(`Parsed location: ${parsedLocation.lat}, ${parsedLocation.lng}`); 
         const locationName = await getLocationName(parsedLocation.lat, parsedLocation.lng);
-        console.log(`Location name: ${locationName}`); // Log the location name
+        // console.log(`Location name: ${locationName}`); 
 
         const attendance = new Attendance({
           image: imageUrl,
@@ -205,4 +204,4 @@ const getEmailAttendance = async (req, res) => {
   }
 };
 
-module.exports = { markAttendance, getAttendanceByDate, getAllAttendance, getFilteredAttendance, getEmailAttendance };
+module.exports = { markAttendance, getAttendanceByDate, getAllAttendance, getFilteredAttendance, getEmailAttendance, getLocationName };
