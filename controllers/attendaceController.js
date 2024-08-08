@@ -58,7 +58,7 @@ const getLocationName = async (lat, lng) => {
 };
 
 const markAttendance = async (req, res) => {
-  const { location, image } = req.body; // 'image' contains the base64 string
+  const { location, image, purpose } = req.body; // 'purpose' field added
 
   if (!image) {
     return res.status(400).json({ error: "Image is required" });
@@ -66,6 +66,10 @@ const markAttendance = async (req, res) => {
 
   if (!location) {
     return res.status(400).json({ error: "Location is required" });
+  }
+
+  if (!purpose) {
+    return res.status(400).json({ error: "Purpose of visit is required" });
   }
 
   // Convert base64 string to buffer
@@ -92,14 +96,13 @@ const markAttendance = async (req, res) => {
         const imageUrl = result.secure_url;
         const timestamp = new Date();
         const parsedLocation = JSON.parse(location);
-        // console.log(`Parsed location: ${parsedLocation.lat}, ${parsedLocation.lng}`); 
         const locationName = await getLocationName(parsedLocation.lat, parsedLocation.lng);
-        // console.log(`Location name: ${locationName}`); 
 
         const attendance = new Attendance({
           image: imageUrl,
           location: parsedLocation,
           locationName,
+          purpose, // Save the purpose of visit
           date: new Date().toISOString().split('T')[0], // Save only the date part
           timestamp,
           user: req.user._id,
@@ -117,6 +120,7 @@ const markAttendance = async (req, res) => {
     res.status(500).json({ error: "Error processing image" });
   }
 };
+
 
 const getAttendanceByDate = async (req, res) => {
   const { date } = req.query;

@@ -19,6 +19,10 @@ const attendanceSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  purpose: { // New field for purpose of visit
+    type: String,
+    required: true,
+  },
   timestamp: {
     type: Date,
     default: Date.now,
