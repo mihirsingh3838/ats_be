@@ -1,6 +1,4 @@
 const Attendance = require('../models/attendanceModel');
-// const path = require("path");
-// const fs = require("fs");
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/userModel');
 const cloudinary = require('cloudinary').v2;
@@ -58,7 +56,7 @@ const getLocationName = async (lat, lng) => {
 };
 
 const markAttendance = async (req, res) => {
-  const { location, image, purpose } = req.body; // 'purpose' field added
+  const { location, image, purpose, feedback } = req.body; // 'purpose' field added
 
   if (!image) {
     return res.status(400).json({ error: "Image is required" });
@@ -103,6 +101,7 @@ const markAttendance = async (req, res) => {
           location: parsedLocation,
           locationName,
           purpose, // Save the purpose of visit
+          feedback,
           date: new Date().toISOString().split('T')[0], // Save only the date part
           timestamp,
           user: req.user._id,

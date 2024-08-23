@@ -23,6 +23,10 @@ const attendanceSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  feedback: { // New field for feedback
+    type: String,
+    maxlength: 50, 
+  },
   timestamp: {
     type: Date,
     default: Date.now,
